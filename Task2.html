@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Stylish Stopwatch</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: #fff;
+    user-select: none;
+  }
+
+  .stopwatch-container {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 30px 40px;
+    max-width: 360px;
+    width: 90vw;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  h1 {
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 2px;
+    margin-bottom: 1rem;
+    font-size: 2.25rem;
+  }
+
+  #display {
+    font-size: 3.5rem;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: 3px;
+    margin: 0.5rem 0 1.5rem 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.75rem;
+    gap: 0.8rem;
+  }
+
+  button {
+    flex: 1;
+    padding: 14px 0;
+    background: #6a11cb;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.1s ease;
+    box-shadow: 0 5px 15px rgba(101, 41, 255, 0.4);
+  }
+
+  button:hover,
+  button:focus {
+    background: linear-gradient(135deg, #5534b3, #1a5de1);
+    outline: none;
+    transform: scale(1.05);
+  }
+
+  button:active {
+    transform: scale(0.95);
+  }
+
+  button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  #laps {
+    max-height: 200px;
+    overflow-y: auto;
+    background: rgba(255,255,255,0.1);
+    border-radius: 15px;
+    padding: 0.8rem 1rem;
+    font-family: monospace;
+    font-size: 1rem;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.15);
+  }
+
+  #laps ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  #laps li {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 6px 0;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  #laps li:last-child {
+    border-bottom: none;
+  }
+
+  @media (max-width: 400px) {
+    .stopwatch-container {
+      padding: 25px 30px;
+    }
+    #display {
+      font-size: 2.75rem;
+    }
+    button {
+      font-size: 1rem;
+      padding: 12px 0;
+    }
+  }
+</style>
+</head>
+<body>
+  <section class="stopwatch-container" role="region" aria-label="Stopwatch Application">
+    <h1>Stopwatch</h1>
+    <div id="display" aria-live="polite" aria-atomic="true">00:00:00.000</div>
+    <div class="buttons">
+      <button id="startPauseBtn" aria-pressed="false" aria-label="Start the stopwatch">Start</button>
+      <button id="lapBtn" disabled aria-label="Record lap time">Lap</button>
+      <button id="resetBtn" disabled aria-label="Reset the stopwatch">Reset</button>
+    </div>
+    <div id="laps" aria-live="polite" aria-atomic="true" aria-label="Lap times">
+      <ul></ul>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      const display = document.getElementById('display');
+      const startPauseBtn = document.getElementById('startPauseBtn');
+      const lapBtn = document.getElementById('lapBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const lapsList = document.querySelector('#laps ul');
+
+      let startTime = 0;
+      let elapsedTime = 0;
+      let timerInterval;
+      let running = false;
+      let lapCount = 0;
+
+      function timeToString(time) {
+        const date = new Date(time);
+        const hours = date.getUTCHours().toString().padStart(2, '0');
+        const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+        const seconds = date.getUTCSeconds().toString().padStart(2, '0');
+        const milliseconds = date.getUTCMilliseconds().toString().padStart(3, '0');
+        return `${hours}:${minutes}:${seconds}.${milliseconds}`;
+      }
+
+      function start() {
+        startTime = Date.now() - elapsedTime;
+        timerInterval = setInterval(() => {
+          elapsedTime = Date.now() - startTime;
+          display.textContent = timeToString(elapsedTime);
+        }, 10);
+        running = true;
+        startPauseBtn.textContent = 'Pause';
+        startPauseBtn.setAttribute('aria-label', 'Pause the stopwatch');
+        startPauseBtn.setAttribute('aria-pressed', 'true');
+        lapBtn.disabled = false;
+        resetBtn.disabled = false;
+      }
+
+      function pause() {
+        clearInterval(timerInterval);
+        running = false;
+        startPauseBtn.textContent = 'Start';
+        startPauseBtn.setAttribute('aria-label', 'Start the stopwatch');
+        startPauseBtn.setAttribute('aria-pressed', 'false');
+      }
+
+      function reset() {
+        clearInterval(timerInterval);
+        running = false;
+        elapsedTime = 0;
+        lapCount = 0;
+        display.textContent = '00:00:00.000';
+        lapsList.innerHTML = '';
+        startPauseBtn.textContent = 'Start';
+        startPauseBtn.setAttribute('aria-label', 'Start the stopwatch');
+        startPauseBtn.setAttribute('aria-pressed', 'false');
+        lapBtn.disabled = true;
+        resetBtn.disabled = true;
+      }
+
+      function recordLap() {
+        lapCount++;
+        const lapItem = document.createElement('li');
+        lapItem.textContent = `Lap ${lapCount}`;
+        const lapTimeSpan = document.createElement('span');
+        lapTimeSpan.textContent = timeToString(elapsedTime);
+        lapItem.appendChild(lapTimeSpan);
+        lapsList.prepend(lapItem);
+      }
+
+      startPauseBtn.addEventListener('click', () => {
+        if (!running) {
+          start();
+        } else {
+          pause();
+        }
+      });
+
+      lapBtn.addEventListener('click', () => {
+        if (running) {
+          recordLap();
+        }
+      });
+
+      resetBtn.addEventListener('click', () => {
+        reset();
+      });
+
+      document.addEventListener('keydown', e => {
+        if (e.code === 'Space' || e.code === 'Enter') {
+          const focused = document.activeElement;
+          if (focused === startPauseBtn) {
+            e.preventDefault();
+            startPauseBtn.click();
+          } else if (focused === lapBtn && !lapBtn.disabled) {
+            e.preventDefault();
+            lapBtn.click();
+          } else if (focused === resetBtn && !resetBtn.disabled) {
+            e.preventDefault();
+            resetBtn.click();
+          }
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
